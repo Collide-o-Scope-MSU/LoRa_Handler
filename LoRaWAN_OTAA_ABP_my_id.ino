@@ -366,12 +366,13 @@ void loop()
   //check the imu threshold{}
   lis3dh_write_data(x, y, z);
    if(sqrt(sq(x) + sq(y) + sq(z)) > 1.5){
+    crash_status=1;
     Serial.println("================Crash Detected================ ");
     Serial.print("Magnitude: ");
     Serial.println(sqrt(sq(x) + sq(y) + sq(z)));
     Serial.println("Sending frame now...");
     send_lora_frame();
-    crash_status=1;
+    
    }
    
    delay(50);
