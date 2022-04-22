@@ -90,12 +90,12 @@ void getDateTime(){
 
  
 
-//  for(int l = 0; l < 10; l++){
-//    memset(rspchar, 0, 256);
-//    bg77_at("AT+QGPSLOC?",8000);
-////    Serial.println(rspchar);
-//    delay(1000);
-//  }
+  for(int l = 0; l < 10; l++){
+    memset(rspchar, 0, 256);
+    bg77_at("AT+QGPSLOC?",8000);
+//    Serial.println(rspchar);
+    delay(1000);
+  }
   bg77_at("AT+QGPSLOC?",5000);
   
     char *p;
