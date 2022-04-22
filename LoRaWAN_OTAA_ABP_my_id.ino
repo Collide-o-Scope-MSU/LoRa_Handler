@@ -265,6 +265,7 @@ void setup()
     lmh_setDevAddr(nodeDevAddr);
   }
   // Initialize LoRaWan
+  uint32_t err_code;
   err_code = lmh_init(&g_lora_callbacks, g_lora_param_init, doOTAA, g_CurrentClass, g_CurrentRegion);
   if (err_code != 0)
   {
@@ -277,9 +278,6 @@ void setup()
 
 void loop()
 {
-  // Put your application tasks here, like reading of sensors,
-  // Controlling actuators and/or other functions. 
-
   //check the imu threshold{}
   lis3dh_write_data(x, y, z);
    if(sqrt(sq(x) + sq(y) + sq(z)) > 1.5){
@@ -292,37 +290,24 @@ void loop()
     // Start Join procedure
     lmh_join();
     delay(2000);
-    
    }
    
    delay(50);
 }
 
-/**@brief LoRa function for handling HasJoined event.
- */
 void lorawan_has_joined_handler(void)
 {
   Serial.println("OTAA Mode, Network Joined!");
   lmh_error_status ret = lmh_class_request(g_CurrentClass);
-  if (ret == LMH_SUCCESS)
-  {
-    delay(1000);
-    TimerSetValue(&appTimer, LORAWAN_APP_INTERVAL);
-    TimerStart(&appTimer);
-  }
 }
-/**@brief LoRa function for handling OTAA join failed
-*/
+
 static void lorawan_join_failed_handler(void)
 {
   Serial.println("OTAA join failed!");
   Serial.println("Check your EUI's and Keys's!");
   Serial.println("Check if a Gateway is in range!");
 }
-/**@brief Function for handling LoRaWan received data from Gateway
- *
- * @param[in] app_data  Pointer to rx data
- */
+
 void lorawan_rx_handler(lmh_app_data_t *app_data)
 {
   Serial.printf("LoRa Packet received on port %d, size:%d, rssi:%d, snr:%d, data:%s\n",
@@ -356,8 +341,6 @@ void send_lora_frame(void)
   //m_lora_app_data.buffer[i++] =  battery & 0x000000FF;
   
   m_lora_app_data.buffsize = i;
-  
-
   lmh_error_status error = lmh_send(&m_lora_app_data, g_CurrentConfirm);
   if (error == LMH_SUCCESS)
   {
