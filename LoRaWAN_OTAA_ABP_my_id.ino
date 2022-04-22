@@ -86,6 +86,7 @@ static uint32_t count = 0;
 static uint32_t count_fail = 0;
 float battery =0.0;
 bool hasSent = false;
+uint8_t status = 0;
 
 float getBatteryLife( ){
   char batteryLife[256] = {0};
@@ -334,7 +335,10 @@ void loop()
 {
   // Put your application tasks here, like reading of sensors,
   // Controlling actuators and/or other functions. 
-  
+
+  //check the imu threshold{}
+  send_lora_frame();
+  delay(20000);
 }
 
 /**@brief LoRa function for handling HasJoined event.
@@ -425,7 +429,7 @@ void tx_lora_periodic_handler(void)
   TimerSetValue(&appTimer, LORAWAN_APP_INTERVAL);
   TimerStart(&appTimer);
   Serial.println("Sending frame now...");
-  send_lora_frame();
+  //send_lora_frame();
 }
 
 /**@brief Function for the Timer initialization.
