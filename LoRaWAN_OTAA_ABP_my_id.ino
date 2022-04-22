@@ -22,6 +22,8 @@
 #include <Arduino.h>
 #include <LoRaWan-RAK4630.h> //http://librarymanager/All#SX126x
 #include <SPI.h>
+#include "SparkFunLIS3DH.h" //http://librarymanager/All#SparkFun-LIS3DH
+#include <Wire.h>
 
 // RAK4630 supply two LED
 #ifndef LED_BUILTIN
@@ -86,7 +88,12 @@ static uint32_t count = 0;
 static uint32_t count_fail = 0;
 float battery =0.0;
 bool hasSent = false;
-uint8_t status = 0;
+uint8_t crash_status = 0;
+
+float x,y,z = 0.00;
+LIS3DH SensorTwo(I2C_MODE, 0x18);
+
+
 
 float getBatteryLife( ){
   char batteryLife[256] = {0};
@@ -229,10 +236,30 @@ void bg77_shutdown(){
   bg77_at("AT+QPOWD=2",2000);
 }
 
+void lis3dh_write_data(float &x, float &y, float &z)
+{
+  // read the sensor value
+  uint8_t cnt = 0;
+  x = SensorTwo.readFloatAccelX();
+  y = SensorTwo.readFloatAccelY();
+  z = SensorTwo.readFloatAccelZ();
+}
+
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+
+   if (SensorTwo.begin() != 0)
+  {
+    Serial.println("Problem starting the sensor at 0x18.");
+  }
+  else
+  {
+    Serial.println("Sensor at 0x18 started.");
+  }
+  Serial.println("enter !");
+
 
   // Initialize LoRa chip.
   lora_rak4630_init();
@@ -337,8 +364,17 @@ void loop()
   // Controlling actuators and/or other functions. 
 
   //check the imu threshold{}
-  send_lora_frame();
-  delay(20000);
+  lis3dh_write_data(x, y, z);
+   if(sqrt(sq(x) + sq(y) + sq(z)) > 1.5){
+    Serial.println("================Crash Detected================ ");
+    Serial.print("Magnitude: ");
+    Serial.println(sqrt(sq(x) + sq(y) + sq(z)));
+    Serial.println("Sending frame now...");
+    send_lora_frame();
+    crash_status=1;
+   }
+   
+   delay(50);
 }
 
 /**@brief LoRa function for handling HasJoined event.
@@ -402,7 +438,7 @@ void send_lora_frame(void)
 
   m_lora_app_data.buffer[i++] = 0x09;    
   m_lora_app_data.buffer[i++] = (battery/4.8)*100; //& 0xFF000000) >> 24;
-  //m_lora_app_data.buffer[i++] = (battery & 0x00FF0000) >> 16;
+  m_lora_app_data.buffer[i++] = crash_status;//(battery & 0x00FF0000) >> 16;
   //m_lora_app_data.buffer[i++] = (battery & 0x0000FF00) >> 8;
   //m_lora_app_data.buffer[i++] =  battery & 0x000000FF;
   
@@ -428,7 +464,7 @@ void tx_lora_periodic_handler(void)
 {
   TimerSetValue(&appTimer, LORAWAN_APP_INTERVAL);
   TimerStart(&appTimer);
-  Serial.println("Sending frame now...");
+ 
   //send_lora_frame();
 }
 
