@@ -70,9 +70,73 @@ bool hasSent = false;
 uint8_t crash_status = 0;
 float x,y,z = 0.00;
 LIS3DH SensorTwo(I2C_MODE, 0x18);
+char gnssChar[10][64] = {{}}; //global
+float nFloat,wFloat = 0.0f; //global
+
+void getDateTime(){
+    bg77_at("AT+QGPS=1",2000);
+  
+    char nCoord[32] = {};
+    char wCoord[32] = {};
+    char rspCode[64] = {};
+    for(int k = 0; k < 10; k++){
+        memset(gnssChar[k],0,64);
+    }
+    //memset(rspchar, 0, 256);
+    Serial.println("Waiting for GPS fix");
+  delay(24000);
+        memset(rspchar, 0, 256);
+  bg77_at("AT+QGPSLOC?",5000);
+
+ 
+
+//  for(int l = 0; l < 10; l++){
+//    memset(rspchar, 0, 256);
+//    bg77_at("AT+QGPSLOC?",8000);
+////    Serial.println(rspchar);
+//    delay(1000);
+//  }
+  bg77_at("AT+QGPSLOC?",5000);
+  
+    char *p;
+    char * res[256] = {0};
+        p = strtok(rspchar, ":");
+    strncpy(rspCode, p, sizeof(p));
+        p = strtok(NULL, ",");
+    strncpy(gnssChar[0], p, sizeof(p)+10);
+for(int i = 1; i < 10; i++){
+      if(p){
+    p = strtok(NULL, ",");
+        strncpy(gnssChar[i], p, sizeof(p)+10);
+    }
+
+ 
+
+  }
+for(int j = 0; j < 10; j++){
+  Serial.printf("gnss char arr %d: %s\n",j,gnssChar[j]);
+  }
+   
+  strncpy(nCoord, gnssChar[1], strlen(gnssChar[1]));
+  strncpy(wCoord, gnssChar[2], strlen(gnssChar[2]));
+  
+  nCoord[strlen(nCoord)-1] = NULL;
+  wCoord[strlen(wCoord)-1] = NULL;
+
+ 
+
+   nFloat = atof(nCoord);
+   wFloat = atof(wCoord);
+
+ 
+
+   nFloat = nFloat / 100.0;
+   wFloat = wFloat / 100.0;
+   bg77_at("AT+QGPSEND",2000);
+  }
 
 
-float getBatteryLife( ){
+float getBatteryLife(){
   char batteryLife[256] = {0};
   memset(batteryLife,0,64);
   memset(rspchar, 0, 256);
@@ -286,6 +350,7 @@ void loop()
     Serial.print("Magnitude: ");
     Serial.println(sqrt(sq(x) + sq(y) + sq(z)));
     Serial.println("Sending frame now...");
+    getDateTime();
     send_lora_frame();
     // Start Join procedure
     lmh_join();
@@ -337,6 +402,15 @@ void send_lora_frame(void)
   m_lora_app_data.buffer[i++] = 0x09;    
   m_lora_app_data.buffer[i++] = (battery/4.8)*100; //& 0xFF000000) >> 24;
   m_lora_app_data.buffer[i++] = crash_status;//(battery & 0x00FF0000) >> 16;
+  m_lora_app_data.buffer[i++] = (((int)nFloat* 100000) & 0xFF000000) >> 24;
+  m_lora_app_data.buffer[i++] = (((int)nFloat* 100000) & 0x00FF0000) >> 16;
+  m_lora_app_data.buffer[i++] = (((int)nFloat* 100000) & 0x0000FF00) >> 8;
+  m_lora_app_data.buffer[i++] =  ((int)nFloat* 100000) & 0x000000FF;
+  m_lora_app_data.buffer[i++] = (((int)wFloat* 100000) & 0xFF000000) >> 24;
+  m_lora_app_data.buffer[i++] = (((int)wFloat* 100000) & 0x00FF0000) >> 16;
+  m_lora_app_data.buffer[i++] = (((int)wFloat* 100000) & 0x0000FF00) >> 8;
+  m_lora_app_data.buffer[i++] =  ((int)wFloat* 100000) & 0x000000FF;
+  
   //m_lora_app_data.buffer[i++] = (battery & 0x0000FF00) >> 8;
   //m_lora_app_data.buffer[i++] =  battery & 0x000000FF;
   
