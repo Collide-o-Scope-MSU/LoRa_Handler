@@ -85,7 +85,7 @@ void getDateTime(){
     //memset(rspchar, 0, 256);
     Serial.println("Waiting for GPS fix");
   delay(24000);
-        memset(rspchar, 0, 256);
+  memset(rspchar, 0, 256);
   bg77_at("AT+QGPSLOC?",5000);
 
  
@@ -139,7 +139,6 @@ for(int j = 0; j < 10; j++){
 float getBatteryLife(){
   char batteryLife[256] = {0};
   memset(batteryLife,0,64);
-  memset(rspchar, 0, 256);
   bg77_at("AT+CBC",2000);
   bg77_at("AT+CBC",2000);
   char *p;
@@ -150,13 +149,9 @@ float getBatteryLife(){
   if(p){
     strncpy(batteryLife, p, sizeof(p));
   }
-  Serial.printf("Battery life in mv: %s\n", batteryLife);
   float f = atof(batteryLife);
-  Serial.printf("Battery life float: %.3f\n", f);
   f = f / 1000.0;
   memset(batteryLife,0,64);
-  sprintf(batteryLife, "%.3f", f);
-  Serial.printf("Battery life string in V: %s\n", batteryLife);
   return f;  
 }
 
@@ -253,6 +248,13 @@ void setup()
   {
     Serial.println("Sensor at 0x18 started.");
   }
+  
+  setup_bg77();
+  delay(10);
+  battery = getBatteryLife();
+  getDateTime();
+  bg77_shutdown();
+  
   // Initialize LoRa chip.
   lora_rak4630_init();
   // Initialize Serial for debug output
@@ -269,13 +271,6 @@ void setup()
       break;
     }
   }
-  setup_bg77();
-  delay(10);
-  battery = getBatteryLife();
-  Serial.print("Battery: ");
-  Serial.println(battery);
-  bg77_shutdown();
-  
   Serial.println("=====================================");
   Serial.println("Welcome to RAK4630 LoRaWan!!!");
   if (doOTAA)
@@ -346,14 +341,16 @@ void loop()
   lis3dh_write_data(x, y, z);
    if(sqrt(sq(x) + sq(y) + sq(z)) > 1.5){
     crash_status=1;
+    //lmh_join();
+
     Serial.println("================Crash Detected================ ");
     Serial.print("Magnitude: ");
     Serial.println(sqrt(sq(x) + sq(y) + sq(z)));
     Serial.println("Sending frame now...");
-    getDateTime();
+   
     send_lora_frame();
     // Start Join procedure
-    lmh_join();
+    
     delay(2000);
    }
    
