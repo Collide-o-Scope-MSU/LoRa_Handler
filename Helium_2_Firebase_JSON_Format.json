@@ -1,0 +1,7 @@
+{
+  "\"ID\"": "\"{{name}}\"",
+  "\"Battery\"": "\"{{decoded.payload.battery}}\"",
+  "\"Time\"": "\"{{reported_at}}\"",
+  "\"Status\"": "\"{{decoded.payload.status}}\"",
+  "\"GPS\"": "\"{{decoded.payload.latitude}},{{decoded.payload.longitude}}\""
+}
